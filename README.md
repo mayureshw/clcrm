@@ -20,7 +20,7 @@
     - You can configure your own forms in otl form.
     
     - You can write a converter for these forms into PDFs using latex and
-      (pyexpander([https://pyexpander.sourceforge.io/] tool. The filled form and
+      [pyexpander](https://pyexpander.sourceforge.io/) tool. The filled form and
       the registration information of hte party for which it is filled are made
       available as python objects to the latex macro file.
     
@@ -93,7 +93,7 @@
 
 1. If you want to generate PDF files from filled forms you have to define a
    corresponding latex template using the
-   (pyexpander([https://pyexpander.sourceforge.io/] syntax. A Python object
+   [pyexpander](https://pyexpander.sourceforge.io/) syntax. A Python object
    corresponding to the filled form and the registration object of the party
    against which the form is recorded are made available to the template.
    (TODO: Will add an example.)
