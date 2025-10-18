@@ -40,15 +40,25 @@
     git clone --depth 1 https://github.com/mayureshw/clcrm $HOME/programs
     ```
 
-1. You need to choose two directories to store your configuration database and
-   crm database and set their paths in your environment. E.g. if you are using
-   bash shell, you may add these to your $HOME/.bashrc file and reopen the
-   session for the environment changes to take effect.
+1. You need to choose a few directories and define them as environment variables.
+   E.g. if you are using bash shell, you may add these to your $HOME/.bashrc
+   file and reopen the session for the environment changes to take effect.
 
     ```
+    # crm configuration database, must be writable
     export CRM_CONFDIR=$HOME/crmconfdb
+
+    # crm database, must be writable
     export CRM_DBDIR=$HOME/crmdb
-    source $HOME/programs/clcrm/bin/crmrc
+
+    # crm cache where clcrm may store some temporary files, must be writable
+    export CRM_CACHEDIR=$HOME/crmcache
+
+    # directory where you kept the installation, must be readable
+    export CRM_INSTALLDIR=$HOME/programs/clcrm
+
+    # let clcrm set its own environment
+    source $CRM_INSTALLDIR/bin/crmrc
     ```
 
 1. You need to configure your installation as described in the next section.
