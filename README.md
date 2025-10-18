@@ -4,32 +4,32 @@
 
 1. Maintaining history of interactions
 
-- Register `parties` with whom you have interactions. Parties can be of various
-  types, depending on the activity you are using the crm for. A party can be an
-  individual, group, business entity - whatever you want to maintain record of
-  interactions with.
-
-- Record discussions in otl form. The otl file is identified by the
-  registration number of the party and the date of the discussion.
-
-- View history of interactions with a given party in reverse chronological
-  order.
+    - Register `parties` with whom you have interactions. Parties can be of various
+      types, depending on the activity you are using the crm for. A party can be an
+      individual, group, business entity - whatever you want to maintain record of
+      interactions with.
+    
+    - Record discussions in otl form. The otl file is identified by the
+      registration number of the party and the date of the discussion.
+    
+    - View history of interactions with a given party in reverse chronological
+      order.
 
 1. System of records and generation of PDFs from filled forms, on your letterhead
 
-- You can configure your own forms in otl form.
-
-- You can write a converter for these forms into PDFs using latex and
-  (pyexpander([https://pyexpander.sourceforge.io/] tool. The filled form and
-  the registration information of hte party for which it is filled are made
-  available as python objects to the latex macro file.
-
-- Keyboard shortcuts to generate a PDF from the form, share the PDF over email
-  or whatsapp, with some additional setup.
+    - You can configure your own forms in otl form.
+    
+    - You can write a converter for these forms into PDFs using latex and
+      (pyexpander([https://pyexpander.sourceforge.io/] tool. The filled form and
+      the registration information of hte party for which it is filled are made
+      available as python objects to the latex macro file.
+    
+    - Keyboard shortcuts to generate a PDF from the form, share the PDF over email
+      or whatsapp, with some additional setup.
 
 1. Financial management
 
-- WIP
+    - WIP
 
 ## Installation
 
@@ -72,11 +72,11 @@
 
    A form is identified by the following files:
 
-    - <formname>.otl : Simply an otl file that will appear in your meeting
+    - \<formname\>.otl : Simply an otl file that will appear in your meeting
       record as-is. This is a template, a document tree. At leaf level of this,
       data values will be recorded when filling the form.
 
-    - <formname>.help : A text file in which you can write help to fill this
+    - \<formname\>.help : A text file in which you can write help to fill this
       form.
 
 1. Only the `top level` forms can be invoked for populating. Top form fields
