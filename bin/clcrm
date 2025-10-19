@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+import sys
+from pathlib import Path
+from os import environ
+
+# We use classes more to organize methods, more as namespaces to organize code
+# This isn't really meant to be OO code
+
+class CrmEnv:
+    def getenv(self,envvar):
+        val = environ.get(envvar,None)
+        if val == None:
+            print('Environment variable not set',envvar)
+            sys.exit(1)
+        return val
+
+    # Env based paths
+    def confdir    (self): return Path( self.getenv('CRM_CONFDIR'))
+    def dbdir      (self): return Path( self.getenv('CRM_DBDIR'))
+    def cachedir   (self): return Path( self.getenv('CRM_CACHEDIR'))
+    def installdir (self): return Path( self.getenv('CRM_INSTALLDIR'))
+
+    # Relative paths
+    def vimformsdir  (self): return self.confdir  () / 'vimforms'
+    def texformsdir  (self): return self.confdir  () / 'texforms'
+    def allregnsfile (self): return self.cachedir () / 'allregns.otl'
+    def indexdir     (self): return self.dbdir    () / 'index'
+
+class Cmd:
+    @classmethod
+    def cmd(cls): return cls.__name__.replace('Cmd_','')
+    def usage(self): print('Usage:',self.basecmd,self.cmd(),self._usage)
+    def run(self): print('Command not implemented:',self.cmd())
+    def __init__(self,args):
+        if not self.validate(args): self.usage()
+        else: self.run()
+            
+
+class Cmd_help(Cmd):
+    _usage = ''
+    _helpmsg = 'Print this help'
+    def validate(self,args): return len(args) == 0
+    def run(self):
+        print('\nAvailable commands:\n')
+        for c in Cmd.cmds.values(): print(' ',c.cmd(),c._usage,'\n   ',c._helpmsg,'\n')
+
+class Cmd_register(Cmd):
+    _usage = ''
+    _helpmsg = 'Register a new party'
+    def validate(self,args): return len(args) == 0
+
+class Cmd_meet(Cmd):
+    _usage = '<regno>'
+    _helpmsg = 'Record / edit interaction'
+    def validate(self,args): return len(args) == 1
+
+class Cmd_hist(Cmd):
+    _usage = '<regno>'
+    _helpmsg = 'View interaction history'
+    def validate(self,args): return len(args) == 1
+
+class CmdHandler:
+    def __init__(self,args):
+        Cmd.basecmd = args[0]
+        subcmdargs = args[1:]
+        Cmd.cmds = { c.cmd() : c for c in Cmd.__subclasses__() }
+        cmd = 'help' if len(subcmdargs) == 0 else subcmdargs[0]
+        if cmd not in Cmd.cmds:
+            print('No such command:',cmd)
+            cmd = 'help'
+        subargs = subcmdargs[1:]
+        cmd = Cmd.cmds[cmd](subargs)
+
+if __name__ == '__main__': CmdHandler(sys.argv)

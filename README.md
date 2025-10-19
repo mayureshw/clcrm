@@ -33,6 +33,14 @@
 
 ## Installation
 
+1. Software requirements
+
+- Python
+- [pyexpander](https://pyexpander.sourceforge.io/)
+- gitpython
+- vim editor with outliner plugin
+- bash
+
 1. Clone this repository in a suitable directory. For convenience of
    documentation let us assume that you install in directory `$HOME/programs`.
 

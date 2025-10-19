@@ -2,14 +2,3 @@ mkdir -p $CRM_CONFDIR $CRM_DBDIR $CRM_CACHEDIR
 
 # Install area declarations
 export PATH=$CRM_INSTALLDIR/bin:$PATH
-export PYTHONPATH=$CRM_INSTALLDIR/bin:$PYTHONPATH
-export CRM_VIMFORMSDIR=$CRM_CONFDIR/vimforms
-export CRM_TEXFORMSDIR=$CRM_CONFDIR/texforms
-export CRM_HELPFILE=$CRM_INSTALLDIR/docs/crm.help
-
-# Cache area declarations
-export CRM_ALLREGNSFILE=$CRM_CACHEDIR/allregns.otl
-export CRM_KEYWORDSFILE=$CRM_CACHEDIR/keywords
-
-# DB area declarations
-export CRM_INDEXDIR=$CRM_DBDIR/index
