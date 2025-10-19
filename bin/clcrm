@@ -32,32 +32,31 @@ class Cmd:
     def usage(self): print('Usage:',self.basecmd,self.cmd(),self._usage)
     def run(self): print('Command not implemented:',self.cmd())
     def __init__(self,args):
-        if not self.validate(args): self.usage()
+        if not self.validateCLI(args): self.usage()
         else: self.run()
             
-
-class Cmd_help(Cmd):
+class Cmd_help(TopCmd):
     _usage = ''
     _helpmsg = 'Print this help'
-    def validate(self,args): return len(args) == 0
+    def validateCLI(self,args): return len(args) == 0
     def run(self):
         print('\nAvailable commands:\n')
         for c in Cmd.cmds.values(): print(' ',c.cmd(),c._usage,'\n   ',c._helpmsg,'\n')
 
-class Cmd_register(Cmd):
+class Cmd_register(TopCmd):
     _usage = ''
     _helpmsg = 'Register a new party'
-    def validate(self,args): return len(args) == 0
+    def validateCLI(self,args): return len(args) == 0
 
-class Cmd_meet(Cmd):
+class Cmd_meet(TopCmd):
     _usage = '<regno>'
     _helpmsg = 'Record / edit interaction'
-    def validate(self,args): return len(args) == 1
+    def validateCLI(self,args): return len(args) == 1
 
-class Cmd_hist(Cmd):
+class Cmd_hist(TopCmd):
     _usage = '<regno>'
     _helpmsg = 'View interaction history'
-    def validate(self,args): return len(args) == 1
+    def validateCLI(self,args): return len(args) == 1
 
 class CmdHandler:
     def __init__(self,args):
