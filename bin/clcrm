@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import sys
+import datetime
+import subprocess
 from pathlib import Path
 from os import environ
 
@@ -21,10 +23,53 @@ class CrmEnv:
     def installdir (self): return Path( self.getenv('CRM_INSTALLDIR'))
 
     # Relative paths
-    def vimformsdir  (self): return self.confdir  () / 'vimforms'
-    def texformsdir  (self): return self.confdir  () / 'texforms'
-    def allregnsfile (self): return self.cachedir () / 'allregns.otl'
-    def indexdir     (self): return self.dbdir    () / 'index'
+    def vimformsdir  (self): return self.confdir   () / 'vimforms'
+    def texformsdir  (self): return self.confdir   () / 'texforms'
+    def allregnsfile (self): return self.cachedir  () / 'allregns.otl'
+    def indexdir     (self): return self.dbdir     () / 'index'
+    def bindir       (self): return self.installdir() / 'bin'
+    def vimrc        (self): return self.bindir    () / 'crm_vimrc'
+
+class CrmConfdb:
+    def getVimForm(self,name):
+        formfile = CrmEnv().vimformsdir() / ( name + '.otl' )
+        if not formfile.exists():
+            print('Form not found',formfile)
+            sys.exit(1)
+        return formfile
+
+class Otl:
+    def write(self,lines):
+        with self.path.open(mode='w') as fp:
+            for indent,text in lines: fp.write('\t'*indent + text+'\n')
+    def append(self,otl):
+        with self.path.open(mode='a') as fp:
+            fp.write(otl.read_text())
+    def edit(self):
+        cmd = [ 'vim',
+            '-c', 'source ' + str(CrmEnv().vimrc()),
+            str(self.path) ]
+        subprocess.run(cmd)
+    def __init__(self,path):
+        if not path.exists():
+            print('Otlutils:write did not find the file',path)
+            sys.exit(1)
+        self.path = path
+
+class Reginfo:
+    @classmethod
+    def newRegno(self): return Reginfo(datetime.datetime.now().strftime("%y%m%d%H%M"))
+    def __str__(self): return self.regno
+    def yy(self): return self.regno[:2]
+    def indxdir(self):
+        idir = CrmEnv().indexdir() / self.yy()
+        idir.mkdir(parents=True,exist_ok=True)
+        return idir
+    def basename(self): return self.regno + '.otl'
+    def regnfile(self): return self.indxdir() / self.basename()
+    def cachefile(self): return CrmEnv().cachedir() / self.basename()
+    def __init__(self,regno):
+        self.regno = regno
 
 class Cmd:
     @classmethod
@@ -47,6 +92,25 @@ class Cmd_register(Cmd):
     _usage = ''
     _helpmsg = 'Register a new party'
     def validateCLI(self,args): return len(args) == 0
+    def run(self):
+        regno = Reginfo.newRegno()
+        regnfile = regno.regnfile()
+        if regnfile.exists() :
+            print('Registration exists with number',regno)
+            print('You are probably trying to register too fast, try after 1 minute')
+            sys.exit(1)
+        cachefile = regno.cachefile()
+        cachefile.touch()
+        formname = 'registration'
+        form = CrmConfdb().getVimForm(formname)
+        otl = Otl(cachefile)
+        otl.write([
+            (0,formname),
+            (1,'Regno'),
+            (2,str(regno))
+            ])
+        otl.append(form)
+        otl.edit()
 
 class Cmd_meet(Cmd):
     _usage = '<regno>'

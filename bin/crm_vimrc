@@ -1,0 +1,39 @@
+se incsearch
+se ic
+se nonu
+set foldlevel=10
+
+"""""""""" SUPPORT FUNCTIONS
+
+" Get current word's starting column. Typically used to ensure that this is a
+" form.
+function! CurWordStrtColNo()
+    " TODO: How do I search this regex, stridx won't
+    let strtColNo = stridx(a:line,'[^[ \t]]')
+endfunction
+
+"""""""""" USE CASE FUNCTIONS
+
+" Tried using Ctrl-N, but looks like that is not possible to map
+" Unfortunately we have to step over some of the vi standard keys here
+
+" Ctrl-o : open form
+map <C-o> :r $CRM_VIMFORMSDIR/<cWORD>.otl<CR>:set foldlevel=1<CR>zo
+
+" Ctrl-h : show help on the form
+map <C-h> :!clear && cat $CRM_VIMFORMSDIR/<cWORD>.help<CR>
+
+" Ctrl-f : fill the data into a form to prepare pdf
+map <C-f> :execute "!crm_genpdf" "<cWORD>" "%" line(".") <CR><CR>yyP$a.pdf<ESC>
+
+" Ctrl-v : View pdf
+map <C-v> :execute "!crm_fhelper" "%" line(".")<CR><CR>
+
+" Ctrl-p : print pdf
+map <C-p> :execute "!crm_print" "%" line(".")<CR>
+
+" Ctrl-e : email pdf
+map <C-e> :execute "!crm_email" "%" line(".")<CR>
+
+" Ctrl-x : pass form to an external (custom) command
+map <C-x> :execute "!crm_xhelper" "<cWORD>" "%" line(".") <CR>
