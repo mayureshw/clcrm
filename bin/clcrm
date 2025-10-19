@@ -123,8 +123,10 @@ class Cmd_register(Cmd):
         if resp == 'y' :
             cachefile.rename(regnfile)
             dbdir = regno.dbdir()
-            PathUtils().mkdir(dbdir)
             git.Repo.init(dbdir)
+            indexrepo = git.Repo.init(CrmEnv().indexdir())
+            indexrepo.index.add(regnfile)
+            indexrepo.index.commit("")
         else :
             print('Deleted the entry')
             cachefile.unlink()
