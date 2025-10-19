@@ -2,6 +2,7 @@
 import sys
 import datetime
 import subprocess
+import git
 from pathlib import Path
 from os import environ
 
@@ -50,11 +51,15 @@ class Otl:
             '-c', 'source ' + str(CrmEnv().vimrc()),
             str(self.path) ]
         subprocess.run(cmd)
+    def print(self): print(self.path.read_text())
     def __init__(self,path):
         if not path.exists():
             print('Otlutils:write did not find the file',path)
             sys.exit(1)
         self.path = path
+
+class PathUtils:
+    def mkdir(self,dirpath): dirpath.mkdir(parents=True,exist_ok=True)
 
 class Reginfo:
     @classmethod
@@ -63,11 +68,12 @@ class Reginfo:
     def yy(self): return self.regno[:2]
     def indxdir(self):
         idir = CrmEnv().indexdir() / self.yy()
-        idir.mkdir(parents=True,exist_ok=True)
+        PathUtils().mkdir(idir)
         return idir
     def basename(self): return self.regno + '.otl'
     def regnfile(self): return self.indxdir() / self.basename()
     def cachefile(self): return CrmEnv().cachedir() / self.basename()
+    def dbdir(self): return CrmEnv().dbdir() / self.yy() / self.regno
     def __init__(self,regno):
         self.regno = regno
 
@@ -111,6 +117,17 @@ class Cmd_register(Cmd):
             ])
         otl.append(form)
         otl.edit()
+        print('Please review the information:')
+        otl.print()
+        resp = input('Press y if you want to proceed with adding this registration: ')
+        if resp == 'y' :
+            cachefile.rename(regnfile)
+            dbdir = regno.dbdir()
+            PathUtils().mkdir(dbdir)
+            git.Repo.init(dbdir)
+        else :
+            print('Deleted the entry')
+            cachefile.unlink()
 
 class Cmd_meet(Cmd):
     _usage = '<regno>'
