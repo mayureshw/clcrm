@@ -31,7 +31,7 @@ class CrmEnv:
     def bindir       (self): return self.installdir() / 'bin'
     def vimrc        (self): return self.bindir    () / 'crm_vimrc'
 
-class CrmConfdb:
+class Confdb:
     def getVimForm(self,name):
         formfile = CrmEnv().vimformsdir() / ( name + '.otl' )
         if not formfile.exists():
@@ -44,8 +44,7 @@ class Otl:
         with self.path.open(mode='w') as fp:
             for indent,text in lines: fp.write('\t'*indent + text+'\n')
     def append(self,otl):
-        with self.path.open(mode='a') as fp:
-            fp.write(otl.read_text())
+        with self.path.open(mode='a') as fp: fp.write(otl.read_text())
     def paginate(self):
         cmd = [ 'less', str(self.path) ]
         subprocess.run(cmd)
@@ -62,15 +61,16 @@ class Otl:
         self.path = path
 
 class Indexdb:
-    def updateRegns(self,regnfile):
+    def appendRegn(self,regnfile):
         allregnsfile = CrmEnv().allregnsfile()
         if not allregnsfile.exists(): allregnsfile.touch()
         Otl(allregnsfile).append(regnfile)
+    def rebuildRegns(self): pass
     def addreg(self,regnfile):
         indexrepo = git.Repo.init(CrmEnv().indexdir())
         indexrepo.index.add(regnfile)
         indexrepo.index.commit("")
-        self.updateRegns(regnfile)
+        self.appendRegn(regnfile)
 
 class PathUtils:
     def mkdir(self,dirpath): dirpath.mkdir(parents=True,exist_ok=True)
@@ -80,10 +80,7 @@ class Reginfo:
     def newRegno(self): return Reginfo(datetime.datetime.now().strftime("%y%m%d%H%M"))
     def __str__(self): return self.regno
     def yy(self): return self.regno[:2]
-    def indxdir(self):
-        idir = CrmEnv().indexdir() / self.yy()
-        PathUtils().mkdir(idir)
-        return idir
+    def indxdir(self): return CrmEnv().indexdir() / self.yy()
     def basename(self): return self.regno + '.otl'
     def regnfile(self): return self.indxdir() / self.basename()
     def cachefile(self): return CrmEnv().cachedir() / self.basename()
@@ -128,7 +125,7 @@ class Cmd_register(Cmd):
         cachefile = regno.cachefile()
         cachefile.touch()
         formname = 'registration'
-        form = CrmConfdb().getVimForm(formname)
+        form = Confdb().getVimForm(formname)
         otl = Otl(cachefile)
         otl.write([
             (0,formname),
@@ -141,6 +138,7 @@ class Cmd_register(Cmd):
         otl.print()
         resp = input('Press y if you want to proceed with adding this registration: ')
         if resp == 'y' :
+            PathUtils().mkdir(regnfile.parents[0])
             cachefile.rename(regnfile)
             dbdir = regno.dbdir()
             git.Repo.init(dbdir)
