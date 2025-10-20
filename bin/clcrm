@@ -141,6 +141,12 @@ class Cmd_register(Cmd):
             print('Registration canceled')
             cachefile.unlink()
 
+class Cmd_search(Cmd):
+    _usage = ''
+    _helpmsg = 'Search registered party'
+    def validateCLI(self,args): return len(args) == 0
+    def run(self): Otl(CrmEnv().allregnsfile()).edit()
+
 class Cmd_meet(Cmd):
     _usage = '<regno>'
     _helpmsg = 'Record / edit interaction'
