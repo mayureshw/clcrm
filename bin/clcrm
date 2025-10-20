@@ -31,6 +31,10 @@ class CrmEnv:
     def bindir       (self): return self.installdir() / 'bin'
     def vimrc        (self): return self.bindir    () / 'crm_vimrc'
 
+class TimeUtils:
+    regfmt = '%y%m%d%H%M'
+    datefmt = '%y%m%d'
+
 class Otl:
     def write(self,lines):
         with self.path.open(mode='w') as fp:
@@ -76,18 +80,17 @@ class Indexdb:
         self.appendRegn(regnfile)
 
 class Partydb:
-    datefmt = '%y%m%d'
     def init(self): git.Repo.init( self.reginfo.dbdir() )
     def validDate(self,datestr):
-        try: dateobj = datetime.datetime.strptime(datestr,self.datefmt)
+        try: dateobj = datetime.datetime.strptime(datestr,TimeUtils.datefmt)
         except: return False
-        return self.reginfo.regdt() <= dateobj and dateobj <= datetime.datetime.today()
+        return self.reginfo.regdt() <= dateobj and dateobj <= datetime.datetime.now()
     def notesfile(self,datestr=None,create=False):
         if datestr != None:
             if not self.validDate(datestr):
                 print('Invalid date',datestr)
                 sys.exit(1)
-        else: datestr = datetime.datetime.today().strftime(self.datefmt)
+        else: datestr = datetime.datetime.today().strftime(TimeUtils.datefmt)
         notesdir = self.reginfo.dbdir()/datestr
         notesfile = notesdir/'notes.otl'
         if create and not notesfile.exists():
@@ -101,18 +104,18 @@ class PathUtils:
     def mkdir(self,dirpath): dirpath.mkdir(parents=True,exist_ok=True)
 
 class Reginfo:
-    regfmt = '%y%m%d%H%M'
     @classmethod
-    def newRegno(self): return Reginfo(datetime.datetime.now().strftime(self.regfmt))
+    def newRegno(self): return Reginfo(datetime.datetime.now().strftime(TimeUtils.regfmt))
     def __str__(self): return self.regno
     def yy(self): return self.regno[:2]
+    def yymmdd(self): return self.regno[:6]
     def indxdir(self): return CrmEnv().indexdir() / self.yy()
     def basename(self): return self.regno + '.otl'
     def regnfile(self): return self.indxdir() / self.basename()
     def cachefile(self): return CrmEnv().cachedir() / self.basename()
     def dbdir(self): return CrmEnv().dbdir() / self.yy() / self.regno
     def exists(self): return self.regnfile().exists()
-    def regdt(self): return datetime.datetime.strptime(self.regnno,self.regfmt)
+    def regdt(self): return datetime.datetime.strptime(self.yymmdd(),TimeUtils.datefmt)
     def edit(self):
         if not self.exists():
             print('Invalid regno',self.regno)
@@ -194,7 +197,7 @@ class Cmd_meet(Cmd):
     def validateCLI(self,args): return len(args) == 1 or len(args) == 2
     def run(self,args):
         partydb = Partydb( Reginfo(args[0]) )
-        datestr = arga[1] if len(args) == 2 else None
+        datestr = args[1] if len(args) == 2 else None
         Otl( partydb.notesfile(datestr,True) ).edit()
         partydb.commit()
 
