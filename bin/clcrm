@@ -44,6 +44,11 @@ class Otl:
     def paginate(self):
         cmd = [ 'less', str(self.path) ]
         subprocess.run(cmd)
+    def view(self):
+        cmd = [ 'vim', '-R',
+            '-c', 'source ' + str(CrmEnv().vimrc()),
+            str(self.path) ]
+        subprocess.run(cmd)
     def edit(self):
         cmd = [ 'vim',
             '-c', 'source ' + str(CrmEnv().vimrc()),
@@ -85,6 +90,15 @@ class Partydb:
         try: dateobj = datetime.datetime.strptime(datestr,TimeUtils.datefmt)
         except: return False
         return self.reginfo.regdt() <= dateobj and dateobj <= datetime.datetime.now()
+    def histfile(self): return CrmEnv().cachedir() / self.reginfo.basename()
+    def genhist(self):
+        histfile = self.histfile()
+        histfile.touch()
+        histOtl = Otl( histfile )
+        histOtl.write([])
+        for n in sorted(self.reginfo.dbdir().glob('*/notes.otl'),reverse=True):
+            histOtl.append(n)
+        return histOtl
     def notesfile(self,datestr=None,create=False):
         if datestr != None:
             if not self.validDate(datestr):
@@ -205,6 +219,10 @@ class Cmd_hist(Cmd):
     _usage = '<regno>'
     _helpmsg = 'View interaction history'
     def validateCLI(self,args): return len(args) == 1
+    def run(self,args):
+        partydb = Partydb( Reginfo(args[0]) )
+        histOtl = partydb.genhist()
+        histOtl.view()
 
 class CmdHandler:
     def __init__(self,args):
