@@ -46,6 +46,9 @@ class Otl:
     def append(self,otl):
         with self.path.open(mode='a') as fp:
             fp.write(otl.read_text())
+    def paginate(self):
+        cmd = [ 'less', str(self.path) ]
+        subprocess.run(cmd)
     def edit(self):
         cmd = [ 'vim',
             '-c', 'source ' + str(CrmEnv().vimrc()),
@@ -85,6 +88,12 @@ class Reginfo:
     def regnfile(self): return self.indxdir() / self.basename()
     def cachefile(self): return CrmEnv().cachedir() / self.basename()
     def dbdir(self): return CrmEnv().dbdir() / self.yy() / self.regno
+    def exists(self): return self.regnfile().exists()
+    def edit(self):
+        if not self.exists():
+            print('Invalid regno',self.regno)
+            sys.exit(1)
+        Otl(self.regnfile()).edit()
     def __init__(self,regno):
         self.regno = regno
 
@@ -92,16 +101,16 @@ class Cmd:
     @classmethod
     def cmd(cls): return cls.__name__.replace('Cmd_','')
     def usage(self): print('Usage:',self.basecmd,self.cmd(),self._usage)
-    def run(self): print('Command not implemented:',self.cmd())
+    def run(self,args): print('Command not implemented:',self.cmd())
     def __init__(self,args):
         if not self.validateCLI(args): self.usage()
-        else: self.run()
+        else: self.run(args)
             
 class Cmd_help(Cmd):
     _usage = ''
     _helpmsg = 'Print this help'
     def validateCLI(self,args): return len(args) == 0
-    def run(self):
+    def run(self,args):
         print('\nAvailable commands:\n')
         for c in Cmd.cmds.values(): print(' ',c.cmd(),c._usage,'\n   ',c._helpmsg,'\n')
 
@@ -109,7 +118,7 @@ class Cmd_register(Cmd):
     _usage = ''
     _helpmsg = 'Register a new party'
     def validateCLI(self,args): return len(args) == 0
-    def run(self):
+    def run(self,args):
         regno = Reginfo.newRegno()
         regnfile = regno.regnfile()
         if regnfile.exists() :
@@ -141,11 +150,18 @@ class Cmd_register(Cmd):
             print('Registration canceled')
             cachefile.unlink()
 
+class Cmd_modreg(Cmd):
+    _usage = '<regno>'
+    _helpmsg = 'Modify a registratered entry'
+    def validateCLI(self,args): return len(args) == 1
+    def run(self,args):
+        Reginfo(args[0]).edit()
+
 class Cmd_search(Cmd):
     _usage = ''
     _helpmsg = 'Search registered party'
     def validateCLI(self,args): return len(args) == 0
-    def run(self): Otl(CrmEnv().allregnsfile()).edit()
+    def run(self,args): Otl(CrmEnv().allregnsfile()).paginate()
 
 class Cmd_meet(Cmd):
     _usage = '<regno>'
