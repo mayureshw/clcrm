@@ -65,7 +65,10 @@ class Indexdb:
         allregnsfile = CrmEnv().allregnsfile()
         if not allregnsfile.exists(): allregnsfile.touch()
         Otl(allregnsfile).append(regnfile)
-    def rebuildRegns(self): pass
+    def rebuildRegns(self):
+        allregnsOtl = Otl( CrmEnv().allregnsfile() )
+        allregnsOtl.write([])
+        for r in sorted(CrmEnv().indexdir().glob('*/*.otl')): allregnsOtl.append(r)
     def addreg(self,regnfile):
         indexrepo = git.Repo.init(CrmEnv().indexdir())
         indexrepo.index.add(regnfile)
@@ -154,6 +157,7 @@ class Cmd_modreg(Cmd):
     def validateCLI(self,args): return len(args) == 1
     def run(self,args):
         Reginfo(args[0]).edit()
+        Indexdb().rebuildRegns()
 
 class Cmd_search(Cmd):
     _usage = ''
