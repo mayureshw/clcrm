@@ -31,14 +31,6 @@ class CrmEnv:
     def bindir       (self): return self.installdir() / 'bin'
     def vimrc        (self): return self.bindir    () / 'crm_vimrc'
 
-class Confdb:
-    def getVimForm(self,name):
-        formfile = CrmEnv().vimformsdir() / ( name + '.otl' )
-        if not formfile.exists():
-            print('Form not found',formfile)
-            sys.exit(1)
-        return formfile
-
 class Otl:
     def write(self,lines):
         with self.path.open(mode='w') as fp:
@@ -60,6 +52,14 @@ class Otl:
             sys.exit(1)
         self.path = path
 
+class Confdb:
+    def getVimForm(self,name):
+        formfile = CrmEnv().vimformsdir() / ( name + '.otl' )
+        if not formfile.exists():
+            print('Form not found',formfile)
+            sys.exit(1)
+        return formfile
+
 class Indexdb:
     def appendRegn(self,regnfile):
         allregnsfile = CrmEnv().allregnsfile()
@@ -74,6 +74,13 @@ class Indexdb:
         indexrepo.index.add(regnfile)
         indexrepo.index.commit("")
         self.appendRegn(regnfile)
+
+class Partydb:
+    def init(self):
+        dbdir = self.reginfo.dbdir()
+        git.Repo.init(dbdir)
+    def __init__(self,reginfo):
+        self.reginfo = reginfo
 
 class PathUtils:
     def mkdir(self,dirpath): dirpath.mkdir(parents=True,exist_ok=True)
@@ -143,8 +150,7 @@ class Cmd_register(Cmd):
         if resp == 'y' :
             PathUtils().mkdir(regnfile.parents[0])
             cachefile.rename(regnfile)
-            dbdir = regno.dbdir()
-            git.Repo.init(dbdir)
+            Partydb(regno).init()
             Indexdb().addreg(regnfile)
             print('Registration added')
         else :
