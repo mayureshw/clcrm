@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import os
 import datetime
 import subprocess
 import git
@@ -92,6 +93,17 @@ class Indexdb:
         indexrepo.index.add(regnfile)
         indexrepo.index.commit('')
         self.appendRegn(regnfile)
+
+class Fifo:
+    def delete(self): self.path.unlink()
+    def create(self): os.mkfifo(self.path)
+    def readline(self):
+        with open(self.path) as fp: return fp.readline()
+    def writeline(self,line):
+        with open(self.path,'w') as fp:
+            fp.write(line+'\n')
+            fp.flush()
+    def __init__(self,path): self.path = path
 
 class Partydb:
     def init(self): git.Repo.init( self.reginfo.dbdir() )
