@@ -62,6 +62,7 @@ class Otl:
             '-c', 'source ' + str(crmenv.vimrc()),
             str(self.path) ]
         subprocess.run(cmd,env=crmenv.subpenv())
+    def delete(self): self.path.unlink()
     def print(self): print(self.path.read_text())
     def __init__(self,path):
         if not path.exists():
@@ -118,8 +119,10 @@ class Partydb:
         if create and not notesfile.exists():
             PathUtils().mkdir(notesdir)
             notesfile.touch()
+            self.gitrepoIndex().add(notesfile)
         return notesfile
-    def commit(self): git.Repo(self.reginfo.dbdir()).index.commit('')
+    def gitrepoIndex(self): return git.Repo(self.reginfo.dbdir()).index
+    def commit(self): self.gitrepoIndex().commit('')
     def __init__(self,reginfo): self.reginfo = reginfo
 
 class PathUtils:
@@ -231,6 +234,7 @@ class Cmd_hist(Cmd):
         partydb = Partydb( Reginfo(args[0]) )
         histOtl = partydb.genhist()
         histOtl.view()
+        histOtl.delete()
 
 class CmdHandler:
     def __init__(self,args):
