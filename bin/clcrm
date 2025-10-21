@@ -31,6 +31,12 @@ class CrmEnv:
     def bindir       (self): return self.installdir() / 'bin'
     def vimrc        (self): return self.bindir    () / 'crm_vimrc'
 
+    # subprocess env
+    def subpenv(self): return { **environ, **{
+        'CRM_VIMFORMSDIR' : self.vimformsdir(),
+        'CRM_TEXFORMSDIR' : self.texformsdir(),
+        }}
+
 class TimeUtils:
     regfmt = '%y%m%d%H%M'
     datefmt = '%y%m%d'
@@ -50,10 +56,12 @@ class Otl:
             str(self.path) ]
         subprocess.run(cmd)
     def edit(self):
+        crmenv = CrmEnv()
         cmd = [ 'vim',
-            '-c', 'source ' + str(CrmEnv().vimrc()),
+            '-c', 'let g:vimformsdir="' + str(crmenv.vimformsdir()) + '"',
+            '-c', 'source ' + str(crmenv.vimrc()),
             str(self.path) ]
-        subprocess.run(cmd)
+        subprocess.run(cmd,env=crmenv.subpenv())
     def print(self): print(self.path.read_text())
     def __init__(self,path):
         if not path.exists():
