@@ -134,8 +134,20 @@ class Partydb:
             self.gitrepoIndex().add(notesfile)
         return notesfile
     def gitrepoIndex(self): return git.Repo(self.reginfo.dbdir()).index
+    def gitrepoExists(self):
+        try: git.Repo(self.reginfo.dbdir())
+        except: return False
+        return True
     def commit(self): self.gitrepoIndex().commit('')
-    def __init__(self,reginfo): self.reginfo = reginfo
+    def __init__(self,reginfo,create=False):
+        self.reginfo = reginfo
+        if create:
+            if self.gitrepoExists():
+                raise Exception('Attempt to create repo when it exists ' + self.reginfo.dbdir())
+            else: self.init()
+        else:
+            if not self.gitrepoExists():
+                raise Exception('Invalid registration number ' + self.reginfo.regno)
 
 class PathUtils:
     def mkdir(self,dirpath): dirpath.mkdir(parents=True,exist_ok=True)
@@ -203,7 +215,7 @@ class Cmd_register(Cmd):
         if resp == 'y' :
             PathUtils().mkdir(regnfile.parents[0])
             cachefile.rename(regnfile)
-            Partydb(regno).init()
+            Partydb(regno,create=True)
             Indexdb().addreg(regnfile)
             print('Registration added')
         else :
