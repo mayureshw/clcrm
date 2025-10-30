@@ -3,6 +3,7 @@ import sys
 import os
 import datetime
 import subprocess
+import threading
 import git
 import cmd
 import readline
@@ -67,10 +68,18 @@ class Comm:
     def delete(self):
         self.c2e.delete()
         self.e2c.delete()
+    def e2cloop(self):
+        with open(self.e2c.path) as fp:
+            while True:
+                l = fp.readline().strip()
+                if not l: continue
+                print('@'+l+'@')
     def __init__(self):
         crmenv = CrmEnv()
         self.c2e = Fifo(crmenv.fifo_c2e())
         self.e2c = Fifo(crmenv.fifo_e2c())
+        t = threading.Thread(target=self.e2cloop, daemon=True)
+        t.start()
 
 class Otl:
     def write(self,lines):
@@ -286,6 +295,7 @@ class CrmCLI(cmd.Cmd):
     def postloop(self): readline.write_history_file(self.cmdhist)
     def __init__(self):
         super().__init__()
+        self.comm = Comm()
         for c in Cmd.__subclasses__() :
             cinst = c()
             fname = f'do_{c.cmd()}'
