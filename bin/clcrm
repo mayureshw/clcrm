@@ -17,9 +17,7 @@ CMDHISTLEN = 100
 class CrmEnv:
     def getenv(self,envvar):
         val = environ.get(envvar,None)
-        if val == None:
-            print('Environment variable not set',envvar)
-            sys.exit(1)
+        if val == None: raise Exception('Environment variable not set '+envvar)
         return val
 
     # Env based paths
@@ -72,16 +70,14 @@ class Otl:
     def print(self): print(self.path.read_text())
     def __init__(self,path):
         if not path.exists():
-            print('Otlutils:write did not find the file',path)
-            sys.exit(1)
+            raise Exception('Otlutils:write did not find the file '+str(path))
         self.path = path
 
 class Confdb:
     def getVimForm(self,name):
         formfile = CrmEnv().vimformsdir() / ( name + '.otl' )
         if not formfile.exists():
-            print('Form not found',formfile)
-            sys.exit(1)
+            raise Exception('Form not found '+str(formfile))
         return formfile
 
 class Indexdb:
@@ -128,8 +124,7 @@ class Partydb:
     def notesfile(self,datestr=None,create=False):
         if datestr != None:
             if not self.validDate(datestr):
-                print('Invalid date',datestr)
-                sys.exit(1)
+                raise Exception('Invalid date '+datestr)
         else: datestr = datetime.datetime.today().strftime(TimeUtils.datefmt)
         notesdir = self.reginfo.dbdir()/datestr
         notesfile = notesdir/'notes.otl'
@@ -160,8 +155,7 @@ class Reginfo:
     def regdt(self): return datetime.datetime.strptime(self.yymmdd(),TimeUtils.datefmt)
     def edit(self):
         if not self.exists():
-            print('Invalid regno',self.regno)
-            sys.exit(1)
+            raise Exception('Invalid regno '+self.regno)
         Otl(self.regnfile()).edit()
     def __init__(self,regno):
         self.regno = regno
@@ -169,19 +163,17 @@ class Reginfo:
 class Cmd:
     @classmethod
     def cmd(cls): return cls.__name__.replace('Cmd_','')
-    def usage(self): print('Usage:',self.basecmd,self.cmd(),self._usage)
+    def usage(self): print('Usage:',self.cmd(),self._usage)
     def run(self,args): print('Command not implemented:',self.cmd())
-    def __init__(self,args):
-        if not self.validateCLI(args): self.usage()
-        else: self.run(args)
-            
-class Cmd_help(Cmd):
-    _usage = ''
-    _helpmsg = 'Print this help'
-    def validateCLI(self,args): return len(args) == 0
-    def run(self,args):
-        print('\nAvailable commands:\n')
-        for c in Cmd.cmds.values(): print(' ',c.cmd(),c._usage,'\n   ',c._helpmsg,'\n')
+    def __call__(self,arg):
+        args = arg.split()
+        if self.validateCLI(args):
+            try: self.run(args)
+            except Exception as e: print('Error:',e)
+        else : self.usage()
+        return False # to continue cmd main loop
+    def __init__(self):
+        self.__doc__ = self.cmd() + ' ' + self._usage + ' : ' + self._helpmsg
 
 class Cmd_register(Cmd):
     _usage = ''
@@ -191,9 +183,8 @@ class Cmd_register(Cmd):
         regno = Reginfo.newRegno()
         regnfile = regno.regnfile()
         if regnfile.exists() :
-            print('Registration exists with number',regno)
-            print('You are probably trying to register too fast, try after 1 minute')
-            sys.exit(1)
+            raise Exception('Registration exists with number ' + regno +
+                ' You are probably trying to register too fast, try after 1 minute')
         cachefile = regno.cachefile()
         cachefile.touch()
         formname = 'registration'
@@ -253,22 +244,10 @@ class Cmd_hist(Cmd):
         histOtl.view()
         histOtl.delete()
 
-class CmdHandler:
-    def __init__(self,args):
-        Cmd.basecmd = args[0]
-        subcmdargs = args[1:]
-        Cmd.cmds = { c.cmd() : c for c in Cmd.__subclasses__() }
-        cmd = 'help' if len(subcmdargs) == 0 else subcmdargs[0]
-        if cmd not in Cmd.cmds:
-            print('No such command:',cmd)
-            cmd = 'help'
-        subargs = subcmdargs[1:]
-        cmd = Cmd.cmds[cmd](subargs)
-
 class CrmCLI(cmd.Cmd):
     intro = "Welcome to clcrm. Type help or ? to list commands, Ctrl-D or EOF to exit."
-    prompt = '> '
-    def do_EOF(self,arg):
+    prompt = 'clcrm> '
+    def do_EOF(self,args):
         'exit clcrm'
         return True
     def preloop(self):
@@ -277,6 +256,12 @@ class CrmCLI(cmd.Cmd):
         readline.read_history_file(self.cmdhist)
         readline.set_history_length(CMDHISTLEN)
     def postloop(self): readline.write_history_file(self.cmdhist)
+    def __init__(self):
+        super().__init__()
+        for c in Cmd.__subclasses__() :
+            cinst = c()
+            fname = f'do_{c.cmd()}'
+            setattr(self.__class__,fname,cinst)
 
 if __name__ == '__main__':
     cli = CrmCLI()
@@ -287,4 +272,4 @@ if __name__ == '__main__':
         else:
             print('Invalid command:',cmd,'Type',sys.argv[0],'help to see available commands')
             sys.exit(1)
-    else: CrmCLI().cmdloop()
+    else: cli.cmdloop()
