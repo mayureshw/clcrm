@@ -85,20 +85,28 @@ class Otl:
     def write(self,lines):
         with self.path.open(mode='w') as fp:
             for indent,text in lines: fp.write('\t'*indent + text+'\n')
-    def append(self,otl):
-        with self.path.open(mode='a') as fp: fp.write(otl.read_text())
+    def append(self,otl,indent=0):
+        with self.path.open(mode='a') as fp:
+            if indent == 0:
+                fp.write(otl.read_text())
+            else:
+                with open(otl) as otlfp:
+                    for line in otlfp:
+                        fp.write('\t'*indent+line)
+    def appendText(self,text):
+        with self.path.open(mode='a') as fp: fp.write(text)
     def paginate(self):
         cmd = [ 'less', str(self.path) ]
         subprocess.run(cmd)
     def view(self):
+        crmenv = CrmEnv()
         cmd = [ 'vim', '-R',
-            '-c', 'source ' + str(CrmEnv().vimrc()),
+            '-c', 'source ' + str(crmenv.vimrc()),
             str(self.path) ]
-        subprocess.run(cmd)
+        subprocess.run(cmd,env=crmenv.subpenv())
     def edit(self):
         crmenv = CrmEnv()
         cmd = [ 'vim',
-            '-c', 'let g:vimformsdir="' + str(crmenv.vimformsdir()) + '"',
             '-c', 'source ' + str(crmenv.vimrc()),
             str(self.path) ]
         subprocess.run(cmd,env=crmenv.subpenv())
@@ -144,7 +152,8 @@ class Partydb:
         histOtl = Otl( histfile )
         histOtl.write([])
         for n in sorted(self.reginfo.dbdir().glob('*/notes.otl'),reverse=True):
-            histOtl.append(n)
+            histOtl.appendText(n.parent.name+'\n')
+            histOtl.append(n,indent=1)
         return histOtl
     def notesfile(self,datestr=None,create=False):
         if datestr != None:
@@ -203,7 +212,7 @@ class Cmd:
     def usage(self): print('Usage:',self.cmd(),self._usage)
     def run(self,args): print('Command not implemented:',self.cmd())
     def __call__(self,arg):
-        args = arg.split()
+        args = arg if isinstance(arg,list) else arg.split()
         if self.validateCLI(args):
             try: self.run(args)
             except Exception as e: print('Error:',e)
