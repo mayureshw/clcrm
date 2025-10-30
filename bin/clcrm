@@ -4,11 +4,15 @@ import os
 import datetime
 import subprocess
 import git
+import cmd
+import readline
 from pathlib import Path
 from os import environ
 
 # We use classes more to organize methods, more as namespaces to organize code
 # This isn't really meant to be OO code
+
+CMDHISTLEN = 100
 
 class CrmEnv:
     def getenv(self,envvar):
@@ -31,6 +35,7 @@ class CrmEnv:
     def indexdir     (self): return self.dbdir     () / 'index'
     def bindir       (self): return self.installdir() / 'bin'
     def vimrc        (self): return self.bindir    () / 'crm_vimrc'
+    def cmdhist      (self): return self.cachedir  () / 'cmdhist'
 
     # subprocess env
     def subpenv(self): return { **environ, **{
@@ -260,4 +265,26 @@ class CmdHandler:
         subargs = subcmdargs[1:]
         cmd = Cmd.cmds[cmd](subargs)
 
-if __name__ == '__main__': CmdHandler(sys.argv)
+class CrmCLI(cmd.Cmd):
+    intro = "Welcome to clcrm. Type help or ? to list commands, Ctrl-D or EOF to exit."
+    prompt = '> '
+    def do_EOF(self,arg):
+        'exit clcrm'
+        return True
+    def preloop(self):
+        self.cmdhist = CrmEnv().cmdhist()
+        self.cmdhist.touch()
+        readline.read_history_file(self.cmdhist)
+        readline.set_history_length(CMDHISTLEN)
+    def postloop(self): readline.write_history_file(self.cmdhist)
+
+if __name__ == '__main__':
+    cli = CrmCLI()
+    if len(sys.argv) > 1:
+        cmd = sys.argv[1]
+        handler = f'do_{cmd}'
+        if hasattr(cli,handler) and callable(getattr(cli,handler)): getattr(cli,handler)(sys.argv[2:])
+        else:
+            print('Invalid command:',cmd,'Type',sys.argv[0],'help to see available commands')
+            sys.exit(1)
+    else: CrmCLI().cmdloop()
