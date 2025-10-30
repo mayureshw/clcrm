@@ -7,7 +7,6 @@ import git
 import cmd
 import readline
 from pathlib import Path
-from os import environ
 
 # We use classes more to organize methods, more as namespaces to organize code
 # This isn't really meant to be OO code
@@ -16,7 +15,7 @@ CMDHISTLEN = 100
 
 class CrmEnv:
     def getenv(self,envvar):
-        val = environ.get(envvar,None)
+        val = os.environ.get(envvar,None)
         if val == None: raise Exception('Environment variable not set '+envvar)
         return val
 
@@ -34,16 +33,44 @@ class CrmEnv:
     def bindir       (self): return self.installdir() / 'bin'
     def vimrc        (self): return self.bindir    () / 'crm_vimrc'
     def cmdhist      (self): return self.cachedir  () / 'cmdhist'
+    def fifo_c2e     (self): return self.cachedir  () / 'c2e.fifo'
+    def fifo_e2c     (self): return self.cachedir  () / 'e2c.fifo'
 
     # subprocess env
-    def subpenv(self): return { **environ, **{
+    def subpenv(self): return { **os.environ, **{
         'CRM_VIMFORMSDIR' : self.vimformsdir(),
         'CRM_TEXFORMSDIR' : self.texformsdir(),
+        'CRM_FIFO_C2E'    : self.fifo_c2e(),
+        'CRM_FIFO_E2C'    : self.fifo_e2c(),
         }}
 
 class TimeUtils:
     regfmt = '%y%m%d%H%M'
     datefmt = '%y%m%d'
+
+class Fifo:
+    def delete(self): self.path.unlink()
+    def readline(self):
+        with open(self.path) as fp: return fp.readline()
+    def writeline(self,line):
+        with open(self.path,'w') as fp:
+            fp.write(line+'\n')
+            fp.flush()
+    def __init__(self,path):
+        self.path = path
+        if self.path.exists():
+            if not self.path.is_fifo():
+                raise Exception('Expect to be a fifo, found non-fifo',self.path)
+        else: os.mkfifo(self.path)
+
+class Comm:
+    def delete(self):
+        self.c2e.delete()
+        self.e2c.delete()
+    def __init__(self):
+        crmenv = CrmEnv()
+        self.c2e = Fifo(crmenv.fifo_c2e())
+        self.e2c = Fifo(crmenv.fifo_e2c())
 
 class Otl:
     def write(self,lines):
@@ -94,17 +121,6 @@ class Indexdb:
         indexrepo.index.add(regnfile)
         indexrepo.index.commit('')
         self.appendRegn(regnfile)
-
-class Fifo:
-    def delete(self): self.path.unlink()
-    def create(self): os.mkfifo(self.path)
-    def readline(self):
-        with open(self.path) as fp: return fp.readline()
-    def writeline(self,line):
-        with open(self.path,'w') as fp:
-            fp.write(line+'\n')
-            fp.flush()
-    def __init__(self,path): self.path = path
 
 class Partydb:
     def init(self): git.Repo.init( self.reginfo.dbdir() )
