@@ -36,8 +36,9 @@
 1. Software requirements
 
 - Python
-- [pyexpander](https://pyexpander.sourceforge.io/)
-- gitpython
+- Python package: pyexpander
+- Python package: gitpython
+- Python package: readline
 - vim editor with outliner plugin
 - bash
 
